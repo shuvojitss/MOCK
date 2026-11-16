@@ -1,0 +1,64 @@
+=== InfyVaccineScheduler - Sample Verification Inputs ===
+
+1. Verify Consul UI:
+   GET http://localhost:8500
+
+2. Verify VaccineCustomerMS directly or through Gateway:
+   GET http://localhost:7575/vaccine/customers/101
+   GET http://localhost:8100/vaccine/customers/101
+
+3. Schedule a Vaccination Appointment (POST /appointment/schedule):
+   Direct:  POST http://localhost:6565/appointment/schedule
+   Gateway: POST http://localhost:8100/appointment/schedule
+   Content-Type: application/json
+
+   Sample Request Body 1:
+   {
+     "customerId": 101,
+     "appointmentDateTime": "2026-12-15T10:30:00",
+     "vaccineType": "Covaxin",
+     "vaccinationCenter": "Apollo City Center",
+     "doseNumber": 1,
+     "status": "SCHEDULED"
+   }
+
+   Sample Request Body 2:
+   {
+     "customerId": 102,
+     "appointmentDateTime": "2026-12-20T14:00:00",
+     "vaccineType": "Covishield",
+     "vaccinationCenter": "Manipal Hospital",
+     "doseNumber": 2
+   }
+
+4. Fetch Available Appointments (GET /appointment/available):
+   Direct:
+   GET http://localhost:6565/appointment/available?startDateTime=2026-12-01T00:00:00&endDateTime=2026-12-10T23:59:59&vaccineType=Covaxin
+
+   Through Gateway:
+   GET http://localhost:8100/appointment/available?startDateTime=2026-12-01T00:00:00&endDateTime=2026-12-10T23:59:59&vaccineType=Covaxin
+
+5. Verify Circuit Breaker & Fallback (getCustomerDetailsFallBack):
+   Stop VaccineCustomerMS and invoke:
+   GET http://localhost:8100/appointment/available?startDateTime=2026-12-01T00:00:00&endDateTime=2026-12-10T23:59:59&vaccineType=Covaxin
+   Expected HTTP 400 (BAD_REQUEST) with fallback VaccineCustomerDTO:
+   [
+     {
+       "appointmentId": null,
+       "customerId": null,
+       "appointmentDateTime": null,
+       "vaccineType": null,
+       "vaccinationCenter": null,
+       "doseNumber": null,
+       "status": null,
+       "vaccineCustomerDTO": {
+         "customerId": 0,
+         "firstName": "Service ",
+         "lastName": "Unavailable ",
+         "email": "service.unavailable@fallback.com",
+         "phoneNumber": "0000000000",
+         "dateOfBirth": "2000-01-01",
+         "status": "FALLBACK"
+       }
+     }
+   ]
